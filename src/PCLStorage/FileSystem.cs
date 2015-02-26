@@ -10,7 +10,11 @@ namespace PCLStorage
     /// </summary>
     public static class FileSystem
     {
-        static Lazy<IFileSystem> _fileSystem = new Lazy<IFileSystem>(() => CreateFileSystem(), System.Threading.LazyThreadSafetyMode.PublicationOnly);
+#if WINDOWS_PHONE_7
+        static IFileSystem _fileSystem;
+#else
+        static Lazy<IFileSystem> _fileSystem = new Lazy<IFileSystem>(() => CreateFileSystem(), System.Threading.LazyThreadSafetyMode.PublicationOnly); 
+#endif
 
         /// <summary>
         /// The implementation of <see cref="IFileSystem"/> for the current platform
@@ -19,7 +23,11 @@ namespace PCLStorage
         {
             get
             {
+#if WINDOWS_PHONE_7
+                IFileSystem ret = _fileSystem ?? (_fileSystem = CreateFileSystem());
+#else
                 IFileSystem ret = _fileSystem.Value;
+#endif
                 if (ret == null)
                 {
                     throw FileSystem.NotImplementedInReferenceAssembly();
@@ -30,7 +38,7 @@ namespace PCLStorage
 
         static IFileSystem CreateFileSystem()
         {
-#if NETFX_CORE || WINDOWS_PHONE
+#if NETFX_CORE || (WINDOWS_PHONE && !WINDOWS_PHONE_7)
 			return new WinRTFileSystem();
 #elif SILVERLIGHT
 			return new IsoStoreFileSystem();
